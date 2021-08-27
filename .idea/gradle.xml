@@ -11,7 +11,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app-sample" />
-            <option value="$PROJECT_DIR$/locationhelper" />
+            <option value="$PROJECT_DIR$/library" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
