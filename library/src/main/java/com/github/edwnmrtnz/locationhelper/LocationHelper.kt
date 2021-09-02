@@ -37,16 +37,6 @@ class LocationHelper(private val applicationContext: Context) {
             .build()
     }
 
-    fun isPermissionEnabled(): Boolean {
-        return applicationContext.isPermissionEnabled()
-    }
-
-    private fun isGpsOpen(): Boolean {
-        val manager =
-            applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        return manager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-    }
-
     @SuppressLint("MissingPermission")
     suspend fun getViableCurrentLocation(accuracy: Float = 100f): LocationResult {
         val audit = audit()
@@ -59,14 +49,18 @@ class LocationHelper(private val applicationContext: Context) {
                     if (p0.locations.isNotEmpty()) {
                         val loc = p0.locations.first()
                         Log.e("Hello", "Found location: $loc")
-                        if(loc.accuracy <= accuracy) {
+                        if (loc.accuracy <= accuracy) {
                             continuation.resume(LocationResult.Success(p0.locations.first()))
                             fusedLocationClient.removeLocationUpdates(this)
                         }
                     }
                 }
             }
-            fusedLocationClient.requestLocationUpdates(locationRequest, callback, Looper.getMainLooper())
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                callback,
+                Looper.getMainLooper()
+            )
         }
     }
 
@@ -78,8 +72,18 @@ class LocationHelper(private val applicationContext: Context) {
         return getOneShotLocation(PRIORITY_HIGH_ACCURACY)
     }
 
-    fun getLocations() : Flow<LocationResult> {
+    fun getLocations(): Flow<LocationResult> {
         TODO()
+    }
+
+    fun isPermissionEnabled(): Boolean {
+        return applicationContext.isPermissionEnabled()
+    }
+
+    fun isGpsOpen(): Boolean {
+        val manager =
+            applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return manager.isProviderEnabled(LocationManager.GPS_PROVIDER)
     }
 
     @SuppressLint("MissingPermission")
@@ -154,6 +158,7 @@ class LocationHelper(private val applicationContext: Context) {
         object Success : AuditResult()
         class Failed(val result: LocationResult) : AuditResult()
     }
+
 
     companion object {
         fun getRequiredPermissions(): Array<String> {
