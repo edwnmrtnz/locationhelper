@@ -15,11 +15,10 @@ project.afterEvaluate {
 }
 
 android {
-    compileSdk 30
-
+    compileSdk 33
     defaultConfig {
         minSdk 16
-        targetSdk 30
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -46,7 +45,7 @@ android {
 }
 
 dependencies {
-    api 'com.google.android.gms:play-services-location:18.0.0'
+    api 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1'
 }

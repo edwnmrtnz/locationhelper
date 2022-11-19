@@ -12,7 +12,6 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import kotlinx.coroutines.flow.Flow
 import kotlin.coroutines.resume
 
@@ -25,10 +24,9 @@ class LocationHelper(private val applicationContext: Context) {
     }
 
     private val locationRequest: LocationRequest by lazy {
-        LocationRequest.create()
-            .setInterval(3000)
-            .setFastestInterval(1000)
-            .setPriority(PRIORITY_HIGH_ACCURACY)
+        LocationRequest.Builder(2000)
+            .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+            .build()
     }
 
     private val locationSettingsRequest: LocationSettingsRequest by lazy {
@@ -47,15 +45,20 @@ class LocationHelper(private val applicationContext: Context) {
             val callback = object : LocationCallback() {
                 override fun onLocationResult(p0: com.google.android.gms.location.LocationResult) {
                     if (p0.locations.isNotEmpty()) {
-                        val loc = p0.locations.first()
-                        Log.e("Hello", "Found location: $loc")
-                        if (loc.accuracy <= accuracy) {
-                            continuation.resume(LocationResult.Success(p0.locations.first()))
+                        val obtainedLocation = p0.locations.first()
+                        if (obtainedLocation.accuracy <= accuracy) {
+                            continuation.resume(LocationResult.Success(obtainedLocation))
                             fusedLocationClient.removeLocationUpdates(this)
                         }
                     }
                 }
             }
+
+            continuation.invokeOnCancellation {
+                Log.e("Hello", "Obtaining location from getViableCurrentLocation was cancelled.")
+                fusedLocationClient.removeLocationUpdates(callback)
+            }
+
             fusedLocationClient.requestLocationUpdates(
                 locationRequest,
                 callback,
@@ -69,7 +72,7 @@ class LocationHelper(private val applicationContext: Context) {
     // device. A single fresh location will be returned if the device location can be
     // determined within reasonable time (tens of seconds), otherwise null will be returned.
     suspend fun getFixCurrentLocation(): LocationResult {
-        return getOneShotLocation(PRIORITY_HIGH_ACCURACY)
+        return getOneShotLocation(Priority.PRIORITY_HIGH_ACCURACY)
     }
 
     fun getLocations(): Flow<LocationResult> {
@@ -130,23 +133,14 @@ class LocationHelper(private val applicationContext: Context) {
                         when (exception.statusCode) {
                             LocationSettingsStatusCodes.RESOLUTION_REQUIRED -> {
                                 val resolvableException = exception as ResolvableApiException
-                                continuation.resume(
-                                    AuditResult.Failed(
-                                        LocationResult.Resolvable(
-                                            resolvableException
-                                        )
-                                    )
-                                )
+                                val failed = AuditResult.Failed(LocationResult.Resolvable(resolvableException))
+                                continuation.resume(failed)
                             }
                             LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE -> {
                                 continuation.resume(AuditResult.Failed(LocationResult.NotResolvable))
                             }
                             else -> continuation.resume(
-                                AuditResult.Failed(
-                                    LocationResult.Failed(
-                                        exception
-                                    )
-                                )
+                                AuditResult.Failed(LocationResult.Failed(exception))
                             )
                         }
                     }

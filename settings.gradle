@@ -7,4 +7,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "locationhelper"
 include ':library'
-include ':app-sample'
+include ':app'
