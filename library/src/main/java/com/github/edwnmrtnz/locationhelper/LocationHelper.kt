@@ -47,8 +47,10 @@ class LocationHelper(private val applicationContext: Context) {
                     if (p0.locations.isNotEmpty()) {
                         val obtainedLocation = p0.locations.first()
                         if (obtainedLocation.accuracy <= accuracy) {
-                            continuation.resume(LocationResult.Success(obtainedLocation))
                             fusedLocationClient.removeLocationUpdates(this)
+                                .addOnCompleteListener {
+                                    continuation.resume(LocationResult.Success(obtainedLocation))
+                                }
                         }
                     }
                 }
